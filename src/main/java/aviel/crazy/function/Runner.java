@@ -4,6 +4,10 @@ package aviel.crazy.function;
 public interface Runner {
     void run();
 
+    static Runner of(Runner runner) {
+        return runner;
+    }
+
     default <In> Cons<In> comp(Cons<In> other) {
         return in -> {
             other.accept(in);

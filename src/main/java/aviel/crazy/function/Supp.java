@@ -4,6 +4,10 @@ package aviel.crazy.function;
 public interface Supp<Out> {
     Out get();
 
+    static <Out> Supp<Out> of(Supp<Out> supp) {
+        return supp;
+    }
+
     default <In> Func<In, Out> comp(Cons<In> other) {
         return in -> {
             other.accept(in);

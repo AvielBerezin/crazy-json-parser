@@ -2,6 +2,10 @@ package aviel.crazy.function;
 
 @FunctionalInterface
 public interface Pred<In> extends Func<In, Boolean> {
+    static <In> Pred<In> of(Pred<In> pred) {
+        return pred;
+    }
+
     default Pred<In> and(Pred<In> other) {
         return in -> apply(in) && other.apply(in);
     }

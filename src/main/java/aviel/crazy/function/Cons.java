@@ -4,6 +4,10 @@ package aviel.crazy.function;
 public interface Cons<In> {
     void accept(In in);
 
+    static <In> Cons<In> of(Cons<In> cons) {
+        return cons;
+    }
+
     default Runner partial(In in) {
         return () -> accept(in);
     }

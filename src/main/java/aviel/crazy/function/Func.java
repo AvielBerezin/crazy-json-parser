@@ -4,6 +4,10 @@ package aviel.crazy.function;
 public interface Func<In, Out> {
     Out apply(In in);
 
+    static <In, Out> Func<In, Out> of(Func<In, Out> func) {
+        return func;
+    }
+
     default Supp<Out> partial(In in) {
         return () -> apply(in);
     }
@@ -31,5 +35,19 @@ public interface Func<In, Out> {
 
     static <In, Val> Func<In, Val> wrap(Val value) {
         return in -> value;
+    }
+
+    record Composer<In, Result, Creator>(Func<Creator, Func<In, Result>> get) {
+        public <Arg> Composer<In, Result, Func<Arg, Creator>> arg(Func<In, Arg> arg) {
+            return new Composer<>(newCreator -> arg.map(newCreator).bind(get));
+        }
+
+        public Func<In, Result> apply(Creator creator) {
+            return get.apply(creator);
+        }
+    }
+
+    static <In, Result> Composer<In, Result, Result> composer() {
+        return new Composer<>(Func::wrap);
     }
 }

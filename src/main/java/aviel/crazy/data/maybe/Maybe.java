@@ -34,7 +34,7 @@ public interface Maybe<Val> {
         }
 
         public Maybe<Result> apply(Creator creator) {
-            return get().apply(creator);
+            return get.apply(creator);
         }
 
     }
@@ -83,7 +83,7 @@ public interface Maybe<Val> {
     }
 
     private static <Val, Acc, ColVal> Collector<Maybe<Val>, AtomicReference<Maybe<Acc>>, Maybe<ColVal>> traverse1(Collector<Val, Acc, ColVal> collector) {
-        return Collector.of(AtomicReference::new,
+        return Collector.of(() -> new AtomicReference<>(wrap(collector.supplier().get())),
                             (ref, may) -> ref.set(Maybe.<Acc>composer()
                                                        .arg(may)
                                                        .arg(ref.get())
