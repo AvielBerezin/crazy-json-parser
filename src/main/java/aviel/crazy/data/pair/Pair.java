@@ -6,7 +6,7 @@ import java.util.function.BiConsumer;
 import java.util.stream.Collector;
 
 public record Pair<L, R>(L left, R right) {
-    static <L, R> Pair<L, R> of(L left, R right) {
+    public static <L, R> Pair<L, R> of(L left, R right) {
         return new Pair<>(left, right);
     }
 
@@ -18,8 +18,8 @@ public record Pair<L, R>(L left, R right) {
         return new Pair<>(left, mapper.apply(right));
     }
 
-    record LeftCollected<Acc, L, R>(Collector<L, Acc, L> leftCollector,
-                                    Pair<L, R> get) {
+    public record LeftCollected<Acc, L, R>(Collector<L, Acc, L> leftCollector,
+                                           Pair<L, R> get) {
         public <MapR> LeftCollected<Acc, L, MapR> map(Func<R, MapR> mapper) {
             return new LeftCollected<>(leftCollector, get.map(mapper));
         }
@@ -62,12 +62,12 @@ public record Pair<L, R>(L left, R right) {
         return new LeftCollected<>(leftCollector, this);
     }
 
-    static <L, ColL, R, ColR> Collector<Pair<L, R>, ?, Pair<ColL, ColR>> traverse(Collector<L, ?, ColL> leftCollector,
-                                                                                  Collector<R, ?, ColR> rightCollector) {
+    public static <L, ColL, R, ColR> Collector<Pair<L, R>, ?, Pair<ColL, ColR>> traverse(Collector<L, ?, ColL> leftCollector,
+                                                                                         Collector<R, ?, ColR> rightCollector) {
         return traverse1(leftCollector, rightCollector);
     }
 
-    static <L, AccL, ColL, R, AccR, ColR> Collector<Pair<L, R>, Pair<AccL, AccR>, Pair<ColL, ColR>>
+    private static <L, AccL, ColL, R, AccR, ColR> Collector<Pair<L, R>, Pair<AccL, AccR>, Pair<ColL, ColR>>
     traverse1(Collector<L, AccL, ColL> leftCollector,
               Collector<R, AccR, ColR> rightCollector) {
         return Collector.of(() -> Pair.of(leftCollector.supplier().get(),

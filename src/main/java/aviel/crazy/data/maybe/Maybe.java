@@ -1,9 +1,10 @@
 package aviel.crazy.data.maybe;
 
+import aviel.crazy.function.Cons;
 import aviel.crazy.function.Func;
 import aviel.crazy.function.Pred;
+import aviel.crazy.function.Runner;
 
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collector;
 
 public interface Maybe<Val> {
@@ -82,20 +83,32 @@ public interface Maybe<Val> {
         return traverse1(collector);
     }
 
-    private static <Val, Acc, ColVal> Collector<Maybe<Val>, AtomicReference<Maybe<Acc>>, Maybe<ColVal>> traverse1(Collector<Val, Acc, ColVal> collector) {
-        return Collector.of(() -> new AtomicReference<>(wrap(collector.supplier().get())),
-                            (ref, may) -> ref.set(Maybe.<Acc>composer()
-                                                       .arg(may)
-                                                       .arg(ref.get())
-                                                       .apply(acc -> val -> {
-                                                           collector.accumulator().accept(acc, val);
-                                                           return acc;
-                                                       })),
-                            (ref1, ref2) -> new AtomicReference<>(Maybe.<Acc>composer()
-                                                                       .arg(ref2.get())
-                                                                       .arg(ref1.get())
-                                                                       .apply(acc1 -> acc2 ->
-                                                                               collector.combiner().apply(acc1, acc2))),
-                            ref -> ref.get().map(collector.finisher()::apply));
+    private static <Val, Acc, ColVal> Collector<Maybe<Val>, Maybe<Acc>, Maybe<ColVal>> traverse1(Collector<Val, Acc, ColVal> collector) {
+        return Collector.of(() -> wrap(collector.supplier().get()),
+                            (mayAcc, mayVal) -> Maybe.<Runner>composer()
+                                                     .arg(mayVal)
+                                                     .arg(mayAcc)
+                                                     .apply(acc -> val -> () -> collector.accumulator().accept(acc, val))
+                                                     .ifSome(Runner::run),
+                            (may1, may2) -> Maybe.<Acc>composer()
+                                                 .arg(may2)
+                                                 .arg(may1)
+                                                 .apply(acc1 -> acc2 ->
+                                                         collector.combiner().apply(acc1, acc2)),
+                            ref -> ref.map(collector.finisher()::apply));
+    }
+
+    default void ifSome(Cons<Val> doIfSome) {
+        dispatch(new Dispatcher<Val, Runner>() {
+            @Override
+            public Runner with(MaybeNone<Val> none) {
+                return () -> {};
+            }
+
+            @Override
+            public Runner with(MaybeSome<Val> some) {
+                return doIfSome.partial(some.get());
+            }
+        }).run();
     }
 }
