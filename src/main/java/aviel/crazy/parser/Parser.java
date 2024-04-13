@@ -17,6 +17,10 @@ public record Parser<Elem, Val>(Func<List<Elem>, Maybe<Pair<List<Elem>, Val>>> g
         return new Parser<>(get);
     }
 
+    public static <Elem, Val extends SupVal, SupVal> Parser<Elem, SupVal> cast(Parser<Elem, Val> parser) {
+        return parser.map(val -> val);
+    }
+
     public Maybe<Pair<List<Elem>, Val>> parse(List<Elem> input) {
         return get.apply(input);
     }
@@ -48,6 +52,22 @@ public record Parser<Elem, Val>(Func<List<Elem>, Maybe<Pair<List<Elem>, Val>>> g
 
     public static <In, Val> Parser<In, Val> wrap(Val value) {
         return of(Func.wrap(Maybe.wrap(Pair.of(Collections.emptyList(), value))));
+    }
+
+    public static <In, Val> Parser<In, Val> fail() {
+        return of(Func.wrap(new MaybeNone<>()));
+    }
+
+    public <OtherVal> Parser<Elem, OtherVal> ignoreTo(Parser<Elem, OtherVal> parser) {
+        return this.bind(ignore -> parser);
+    }
+
+    public <OtherVal> Parser<Elem, OtherVal> ignoreTo(OtherVal parser) {
+        return this.bind(ignore -> wrap(parser));
+    }
+
+    public <OtherVal> Parser<Elem, Val> ignoring(Parser<Elem, OtherVal> parser) {
+        return this.bind(val -> parser.map(ignore -> val));
     }
 
     public Parser<Elem, Val> guard(Pred<Val> cond) {
@@ -97,7 +117,7 @@ public record Parser<Elem, Val>(Func<List<Elem>, Maybe<Pair<List<Elem>, Val>>> g
 
     private <Acc, Vals> Parser<Elem, Vals> plus1(Collector<Val, Acc, Vals> collector) {
         return Parser.<Elem, Vals>composer()
-                     .arg(star(Collector.of(collector.supplier(), collector.accumulator(), collector.combiner())))
+                     .arg(star1(Collector.of(collector.supplier(), collector.accumulator(), collector.combiner())))
                      .arg(this)
                      .apply(val -> acc -> {
                          collector.accumulator().accept(acc, val);
@@ -111,5 +131,14 @@ public record Parser<Elem, Val>(Func<List<Elem>, Maybe<Pair<List<Elem>, Val>>> g
 
     private <Acc, Vals> Parser<Elem, Vals> star1(Collector<Val, Acc, Vals> collector) {
         return plus1(collector).or(wrap(collector.finisher().apply(collector.supplier().get())));
+    }
+
+    public static <Elem> Parser<Elem, Elem> token() {
+        return of(elems -> {
+            if (elems.isEmpty()) {
+                return new MaybeNone<>();
+            }
+            return new MaybeSome<>(new Pair<>(elems.subList(1, elems.size()), elems.get(0)));
+        });
     }
 }
