@@ -69,12 +69,12 @@ public record Parser<Elem, Val>(Func<List<Elem>, Maybe<Pair<List<Elem>, Val>>> g
     }
 
     public static <Elem, Val, Vals> Collector<Parser<Elem, Val>, ?, Parser<Elem, Vals>>
-    traverse(Collector<Val, ?, Vals> collector) {
-        return traverse1(collector);
+    collect(Collector<Val, ?, Vals> collector) {
+        return collect1(collector);
     }
 
     private static <Acc, Elem, Val, Vals> Collector<Parser<Elem, Val>, AtomicReference<Parser<Elem, Acc>>, Parser<Elem, Vals>>
-    traverse1(Collector<Val, Acc, Vals> collector) {
+    collect1(Collector<Val, Acc, Vals> collector) {
         return Collector.of(() -> new AtomicReference<>(Parser.wrap(collector.supplier().get())),
                             (ref, parser) -> ref.set(Parser.<Elem, Acc>composer()
                                                            .arg(parser)

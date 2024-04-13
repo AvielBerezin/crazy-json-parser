@@ -1,5 +1,8 @@
 package aviel.crazy.function;
 
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collector;
+
 @FunctionalInterface
 public interface Func<In, Out> {
     Out apply(In in);
@@ -49,5 +52,27 @@ public interface Func<In, Out> {
 
     static <In, Result> Composer<In, Result, Result> composer() {
         return new Composer<>(Func::wrap);
+    }
+
+    static <In, Val, Vals> Collector<Func<In, Val>, ?, Func<In, Vals>> collect(Collector<Val, ?, Vals> collector) {
+        return collect1(collector);
+    }
+
+    private static <Acc, In, Val, Vals> Collector<Func<In, Val>, AtomicReference<Func<In, Acc>>, Func<In, Vals>>
+    collect1(Collector<Val, Acc, Vals> collector) {
+        return Collector.of(() -> new AtomicReference<>(Func.wrap(collector.supplier().get())),
+                            (ref, parser) -> ref.set(Func.<In, Acc>composer()
+                                                           .arg(parser)
+                                                           .arg(ref.get())
+                                                           .apply(acc -> val -> {
+                                                               collector.accumulator().accept(acc, val);
+                                                               return acc;
+                                                           })),
+                            (ref1, ref2) -> new AtomicReference<>(Func.<In, Acc>composer()
+                                                                        .arg(ref2.get())
+                                                                        .arg(ref1.get())
+                                                                        .apply(acc1 -> acc2 ->
+                                                                                collector.combiner().apply(acc1, acc2))),
+                            ref -> ref.get().map(collector.finisher()::apply));
     }
 }

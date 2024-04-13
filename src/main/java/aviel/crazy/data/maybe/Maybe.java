@@ -79,11 +79,11 @@ public interface Maybe<Val> {
         });
     }
 
-    static <Val, ColVal> Collector<Maybe<Val>, ?, Maybe<ColVal>> traverse(Collector<Val, ?, ColVal> collector) {
-        return traverse1(collector);
+    static <Val, ColVal> Collector<Maybe<Val>, ?, Maybe<ColVal>> collect(Collector<Val, ?, ColVal> collector) {
+        return collect1(collector);
     }
 
-    private static <Val, Acc, ColVal> Collector<Maybe<Val>, Maybe<Acc>, Maybe<ColVal>> traverse1(Collector<Val, Acc, ColVal> collector) {
+    private static <Val, Acc, ColVal> Collector<Maybe<Val>, Maybe<Acc>, Maybe<ColVal>> collect1(Collector<Val, Acc, ColVal> collector) {
         return Collector.of(() -> wrap(collector.supplier().get()),
                             (mayAcc, mayVal) -> Maybe.<Runner>composer()
                                                      .arg(mayVal)

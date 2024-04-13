@@ -62,14 +62,14 @@ public record Pair<L, R>(L left, R right) {
         return new LeftCollected<>(leftCollector, this);
     }
 
-    public static <L, ColL, R, ColR> Collector<Pair<L, R>, ?, Pair<ColL, ColR>> traverse(Collector<L, ?, ColL> leftCollector,
-                                                                                         Collector<R, ?, ColR> rightCollector) {
-        return traverse1(leftCollector, rightCollector);
+    public static <L, ColL, R, ColR> Collector<Pair<L, R>, ?, Pair<ColL, ColR>> collect(Collector<L, ?, ColL> leftCollector,
+                                                                                        Collector<R, ?, ColR> rightCollector) {
+        return collect1(leftCollector, rightCollector);
     }
 
     private static <L, AccL, ColL, R, AccR, ColR> Collector<Pair<L, R>, Pair<AccL, AccR>, Pair<ColL, ColR>>
-    traverse1(Collector<L, AccL, ColL> leftCollector,
-              Collector<R, AccR, ColR> rightCollector) {
+    collect1(Collector<L, AccL, ColL> leftCollector,
+             Collector<R, AccR, ColR> rightCollector) {
         return Collector.of(() -> Pair.of(leftCollector.supplier().get(),
                                           rightCollector.supplier().get()),
                             (pairAcc, pair) -> {
