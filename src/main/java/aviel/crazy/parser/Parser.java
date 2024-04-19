@@ -118,15 +118,16 @@ public record Parser<Elem, Val>(Func<List<Elem>, Maybe<Pair<List<Elem>, Val>>> g
     private <Acc, Vals> Parser<Elem, Vals> plus1(Collector<Val, Acc, Vals> collector) {
         return Parser.<Elem, Vals>composer()
                      .arg(Parser.of(input -> (
-                             star1(Collector.of(collector.supplier(),
-                                                collector.accumulator(),
-                                                collector.combiner()))
-                                     .parse(input)
+                                    star1(Collector.of(collector.supplier(),
+                                          collector.accumulator(),
+                                          collector.combiner()))
+                                            .parse(input)
                      )))
                      .arg(this)
-                     .apply(val -> acc -> {
-                         collector.accumulator().accept(acc, val);
-                         return collector.finisher().apply(acc);
+                     .apply(val -> acc2 -> {
+                         Acc acc1 = collector.supplier().get();
+                         collector.accumulator().accept(acc1, val);
+                         return collector.finisher().apply(collector.combiner().apply(acc1, acc2));
                      });
     }
 
@@ -135,7 +136,8 @@ public record Parser<Elem, Val>(Func<List<Elem>, Maybe<Pair<List<Elem>, Val>>> g
     }
 
     private <Acc, Vals> Parser<Elem, Vals> star1(Collector<Val, Acc, Vals> collector) {
-        return Parser.of((List<Elem> input) -> plus1(collector).parse(input)).or(wrap(collector.finisher().apply(collector.supplier().get())));
+        return Parser.of((List<Elem> input) -> plus1(collector).parse(input))
+                     .or(wrap(collector.finisher().apply(collector.supplier().get())));
     }
 
     public static <Elem> Parser<Elem, Elem> token() {
