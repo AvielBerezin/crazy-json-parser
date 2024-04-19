@@ -74,6 +74,16 @@ public class JsonParserTest extends TestCase {
                 }));
     }
 
+    public void testString() {
+        assertValue(JsonParser.jsonParser().parse(listOfString("\"\"")))
+                .isEqualTo(Maybe.wrap(Pair.of(List.of(), new JSONString(""))));
+        assertValue(JsonParser.jsonParser().parse(listOfString("\"abcd 1234\"")))
+                .isEqualTo(Maybe.wrap(Pair.of(List.of(), new JSONString("abcd 1234"))));
+        assertValue(JsonParser.jsonParser().parse(listOfString("\"\\n\\t\\\"\\\\\"")))
+                .isEqualTo(Maybe.wrap(Pair.of(List.of(), new JSONString("\n\t\"\\"))));
+
+    }
+
     record AssertedValue<Val>(Val value) {
         void satisfies(Pred<Val> condition) {
             if (!condition.apply(value)) {

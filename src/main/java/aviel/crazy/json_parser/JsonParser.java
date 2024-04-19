@@ -105,7 +105,33 @@ public class JsonParser {
     }
 
     public static Parser<Character, JSONString> jsonStringParser() {
-        return Parser.fail();
+        Parser<Character, Character> doubleQuote =
+                Parser.<Character>token()
+                      .guard(c -> c == '\"');
+        Parser<Character, Character> nonEscape =
+                Parser.<Character>token()
+                      .guard(c -> c != '\\' &&
+                                  c != '\"');
+        Parser<Character, Character> escaped =
+                Parser.<Character>token()
+                      .guard(c -> c == '\\')
+                      .ignoreTo(Parser.<Character>token()
+                                      .guard(c -> c == 'n')
+                                      .ignoreTo('\n')
+                                      .or(Parser.<Character>token()
+                                                .guard(c -> c == 't')
+                                                .ignoreTo('\t'))
+                                      .or(Parser.<Character>token()
+                                                .guard(c -> c == '\\'))
+                                      .or(Parser.<Character>token()
+                                                .guard(c -> c == '\"')));
+        return padding().ignoreTo(doubleQuote)
+                        .ignoreTo(nonEscape.or(escaped)
+                                           .map(x -> (CharSequence) x.toString())
+                                           .star(Collectors.joining())
+                                           .map(JSONString::new))
+                        .ignoring(doubleQuote)
+                        .ignoring(padding());
     }
 
     public static Parser<Character, JSONArray> jsonArrayParser() {
