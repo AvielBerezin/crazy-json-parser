@@ -84,6 +84,21 @@ public class JsonParserTest extends TestCase {
 
     }
 
+    public void testArray() {
+        assertValue(JsonParser.jsonParser().parse(listOfString("[]")))
+                .isEqualTo(Maybe.wrap(Pair.of(List.of(), new JSONArray(List.of()))));
+        assertValue(JsonParser.jsonParser().parse(listOfString("[1,2,3]")))
+                .isEqualTo(Maybe.wrap(Pair.of(List.of(),
+                                              new JSONArray(List.of(new JSONNum(1),
+                                                                    new JSONNum(2),
+                                                                    new JSONNum(3))))));
+        assertValue(JsonParser.jsonParser().parse(listOfString("[1,[2],3]")))
+                .isEqualTo(Maybe.wrap(Pair.of(List.of(),
+                                              new JSONArray(List.of(new JSONNum(1),
+                                                                    new JSONArray(List.of(new JSONNum(2))),
+                                                                    new JSONNum(3))))));
+    }
+
     record AssertedValue<Val>(Val value) {
         void satisfies(Pred<Val> condition) {
             if (!condition.apply(value)) {

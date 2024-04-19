@@ -7,6 +7,7 @@ import aviel.crazy.utils.MoreCollectors;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -135,7 +136,24 @@ public class JsonParser {
     }
 
     public static Parser<Character, JSONArray> jsonArrayParser() {
-        return Parser.fail();
+        return padding().ignoreTo(Parser.<Character>token()
+                                        .guard(c -> c == '['))
+                        .ignoreTo(Parser.of((List<Character> input) -> jsonParser().parse(input))
+                                        .bind(lead -> Parser.<Character>token()
+                                                            .guard(c -> c == ',')
+                                                            .ignoreTo(jsonParser())
+                                                            .star(Collectors.toList())
+                                                            .map(tail -> {
+                                                                List<JSON> array = new ArrayList<>(tail.size() + 1);
+                                                                array.add(lead);
+                                                                array.addAll(tail);
+                                                                return array;
+                                                            }))
+                                        .or(padding().ignoreTo(List.of()))
+                                        .map(JSONArray::new))
+                        .ignoring(Parser.<Character>token()
+                                        .guard(c -> c == ']'))
+                        .ignoring(padding());
     }
 
     public static Parser<Character, JSONObject> jsonObjectParser() {
