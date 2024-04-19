@@ -29,7 +29,7 @@ public record Parser<Elem, Val>(Func<List<Elem>, Maybe<Pair<List<Elem>, Val>>> g
         return of(get.map(Func.of(pairMaybe -> pairMaybe.map(pair -> pair.map(mapper)))));
     }
 
-    record Composer<Elem, Result, Creator>(Func<Creator, Parser<Elem, Result>> get) {
+    public record Composer<Elem, Result, Creator>(Func<Creator, Parser<Elem, Result>> get) {
         public <Arg> Composer<Elem, Result, Func<Arg, Creator>> arg(Parser<Elem, Arg> arg) {
             return new Composer<>(newCreator -> arg.map(newCreator).bind(get));
         }
@@ -51,7 +51,7 @@ public record Parser<Elem, Val>(Func<List<Elem>, Maybe<Pair<List<Elem>, Val>>> g
     }
 
     public static <In, Val> Parser<In, Val> wrap(Val value) {
-        return of(Func.wrap(Maybe.wrap(Pair.of(Collections.emptyList(), value))));
+        return of(input -> Maybe.wrap(Pair.of(input, value)));
     }
 
     public static <In, Val> Parser<In, Val> fail() {
@@ -117,7 +117,12 @@ public record Parser<Elem, Val>(Func<List<Elem>, Maybe<Pair<List<Elem>, Val>>> g
 
     private <Acc, Vals> Parser<Elem, Vals> plus1(Collector<Val, Acc, Vals> collector) {
         return Parser.<Elem, Vals>composer()
-                     .arg(star1(Collector.of(collector.supplier(), collector.accumulator(), collector.combiner())))
+                     .arg(Parser.of(input -> (
+                             star1(Collector.of(collector.supplier(),
+                                                collector.accumulator(),
+                                                collector.combiner()))
+                                     .parse(input)
+                     )))
                      .arg(this)
                      .apply(val -> acc -> {
                          collector.accumulator().accept(acc, val);
@@ -130,7 +135,7 @@ public record Parser<Elem, Val>(Func<List<Elem>, Maybe<Pair<List<Elem>, Val>>> g
     }
 
     private <Acc, Vals> Parser<Elem, Vals> star1(Collector<Val, Acc, Vals> collector) {
-        return plus1(collector).or(wrap(collector.finisher().apply(collector.supplier().get())));
+        return Parser.of((List<Elem> input) -> plus1(collector).parse(input)).or(wrap(collector.finisher().apply(collector.supplier().get())));
     }
 
     public static <Elem> Parser<Elem, Elem> token() {

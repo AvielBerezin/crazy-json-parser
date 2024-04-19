@@ -2,6 +2,8 @@ package aviel.crazy.json_parser;
 
 import aviel.crazy.data.json.*;
 import aviel.crazy.parser.Parser;
+import aviel.crazy.utils.MoreCollectors;
+import aviel.crazy.utils.OtherUtils;
 
 import java.util.stream.Collector;
 
@@ -17,7 +19,12 @@ public class JsonParser {
     }
 
     public static Parser<Character, JSONNull> jsonNullParser() {
-        return Parser.fail();
+        return padding().ignoreTo(OtherUtils.listOfString("null")
+                                            .stream()
+                                            .map(c -> Parser.<Character>token().guard(c::equals))
+                                            .collect(Parser.collect(MoreCollectors.ignoring()))
+                                            .map(ignored -> new JSONNull()))
+                        .ignoring(padding());
     }
 
     public static Parser<Character, JSONBool> jsonBoolParser() {
