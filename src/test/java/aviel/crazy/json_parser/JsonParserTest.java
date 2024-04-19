@@ -9,6 +9,7 @@ import aviel.crazy.function.Pred;
 import junit.framework.TestCase;
 
 import java.util.List;
+import java.util.Map;
 
 import static aviel.crazy.utils.OtherUtils.listOfString;
 
@@ -97,6 +98,19 @@ public class JsonParserTest extends TestCase {
                                               new JSONArray(List.of(new JSONNum(1),
                                                                     new JSONArray(List.of(new JSONNum(2))),
                                                                     new JSONNum(3))))));
+    }
+
+    public void testObject() {
+        assertValue(JsonParser.jsonParser().parse(listOfString("{}")))
+                .isEqualTo(Maybe.wrap(Pair.of(List.of(), new JSONObject(Map.of()))));
+        assertValue(JsonParser.jsonParser().parse(listOfString("{\"a\": 1, \"b\": 2}")))
+                .isEqualTo(Maybe.wrap(Pair.of(List.of(), new JSONObject(Map.of("a", new JSONNum(1),
+                                                                               "b", new JSONNum(2))))));
+        assertValue(JsonParser.jsonParser().parse(listOfString("{\"a\": 1}")))
+                .isEqualTo(Maybe.wrap(Pair.of(List.of(), new JSONObject(Map.of("a", new JSONNum(1))))));
+        assertValue(JsonParser.jsonParser().parse(listOfString("{\"a\": {}, \"b\": {\"a\": \"b\"}}")))
+                .isEqualTo(Maybe.wrap(Pair.of(List.of(), new JSONObject(Map.of("a", new JSONObject(Map.of()),
+                                                                               "b", new JSONObject(Map.of("a", new JSONString("b"))))))));
     }
 
     record AssertedValue<Val>(Val value) {

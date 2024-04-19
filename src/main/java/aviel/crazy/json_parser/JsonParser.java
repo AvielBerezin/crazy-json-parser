@@ -1,13 +1,12 @@
 package aviel.crazy.json_parser;
 
 import aviel.crazy.data.json.*;
+import aviel.crazy.data.pair.Pair;
 import aviel.crazy.function.Func;
 import aviel.crazy.parser.Parser;
 import aviel.crazy.utils.MoreCollectors;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -157,7 +156,26 @@ public class JsonParser {
     }
 
     public static Parser<Character, JSONObject> jsonObjectParser() {
-        return Parser.fail();
+        Parser<Character, Pair<String, JSON>> keyValPair = jsonStringParser().map(JSONString::get)
+                                                                             .ignoring(Parser.<Character>token()
+                                                                                             .guard(c -> c == ':'))
+                                                                             .bind(key -> jsonParser().map(json -> Pair.of(key, json)));
+        return padding().ignoreTo(Parser.<Character>token()
+                                        .guard(c -> c == '{'))
+                        .ignoreTo(keyValPair.bind(lead -> Parser.<Character>token()
+                                                                .guard(c -> c == ',')
+                                                                .ignoreTo(keyValPair)
+                                                                .star(Collectors.toMap(Pair::left, Pair::right))
+                                                                .map(tail -> {
+                                                                    Map<String, JSON> map = new HashMap<>(tail);
+                                                                    map.putIfAbsent(lead.left(), lead.right());
+                                                                    return map;
+                                                                }))
+                                            .or(padding().ignoreTo(Map.of()))
+                                            .map(JSONObject::new))
+                        .ignoring(Parser.<Character>token()
+                                        .guard(c -> c == '}'))
+                        .ignoring(padding());
     }
 
     public static Parser<Character, JSON> jsonParser() {
