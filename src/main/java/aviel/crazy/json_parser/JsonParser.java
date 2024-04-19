@@ -23,16 +23,28 @@ public class JsonParser {
                                             .stream()
                                             .map(c -> Parser.<Character>token().guard(c::equals))
                                             .collect(Parser.collect(MoreCollectors.ignoring()))
-                                            .map(ignored -> new JSONNull()))
+                                            .ignoreTo(new JSONNull()))
                         .ignoring(padding());
     }
 
     public static Parser<Character, JSONBool> jsonBoolParser() {
-        return Parser.fail();
+        return padding().ignoreTo(OtherUtils.listOfString("true")
+                                            .stream()
+                                            .map(c -> Parser.<Character>token().guard(c::equals))
+                                            .collect(Parser.collect(MoreCollectors.ignoring()))
+                                            .ignoreTo(true)
+                                            .or(OtherUtils.listOfString("false")
+                                                          .stream()
+                                                          .map(c -> Parser.<Character>token().guard(c::equals))
+                                                          .collect(Parser.collect(MoreCollectors.ignoring()))
+                                                          .ignoreTo(false))
+                                            .map(JSONBool::new))
+                        .ignoring(padding());
     }
 
     public static Parser<Character, JSONNum> jsonNumParser() {
-        return Parser.fail();
+        return padding().ignoreTo(Parser.<Character, JSONNum>fail())
+                        .ignoring(padding());
     }
 
     public static Parser<Character, JSONString> jsonStringParser() {
