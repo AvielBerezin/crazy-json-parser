@@ -4,6 +4,7 @@ import aviel.crazy.data.json.*;
 import aviel.crazy.data.maybe.Maybe;
 import aviel.crazy.data.pair.Pair;
 import aviel.crazy.json_parser.JsonParser;
+import aviel.crazy.utils.OtherUtils;
 
 import java.util.List;
 import java.util.regex.Matcher;
@@ -116,8 +117,15 @@ public class Scratch {
                               "}";
         Maybe<Pair<List<Character>, JSON>> json = JsonParser.jsonParser().parse(listOfString(jsonAsString));
         System.out.println(json);
-        json.map(Pair::right)
-            .map(Scratch::jsonFormatter)
-            .ifSome(System.out::println);
+        Maybe<String> parsedJson = json.map(Pair::right)
+                                       .map(Scratch::jsonFormatter);
+        parsedJson.ifSome(System.out::println);
+        Maybe<String> redone = parsedJson.map(OtherUtils::listOfString)
+                                         .map(JsonParser.jsonParser().get())
+                                         .bind(x -> x)
+                                         .map(Pair::right)
+                                         .map(Scratch::jsonFormatter);
+        redone.ifSome(System.out::println);
+        System.out.println(redone.equals(parsedJson) ? "good" : "bad");
     }
 }

@@ -34,6 +34,10 @@ public record Parser<Elem, Val>(Func<List<Elem>, Maybe<Pair<List<Elem>, Val>>> g
             return new Composer<>(newCreator -> arg.map(newCreator).bind(get));
         }
 
+        public <Arg> Composer<Elem, Result, Creator> ignore(Parser<Elem, Arg> argIgnored) {
+            return new Composer<>(creator -> argIgnored.ignoreTo(creator).bind(get));
+        }
+
         public Parser<Elem, Result> apply(Creator creator) {
             return get.apply(creator);
         }

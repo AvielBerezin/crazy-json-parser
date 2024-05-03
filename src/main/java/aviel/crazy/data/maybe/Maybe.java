@@ -10,7 +10,16 @@ import java.util.stream.Collector;
 public interface Maybe<Val> {
     interface Dispatcher<Val, Result> {
         Result with(MaybeNone<Val> none);
+
         Result with(MaybeSome<Val> some);
+    }
+
+    static <Val> MaybeNone<Val> none() {
+        return new MaybeNone<>();
+    }
+
+    static <Val> MaybeSome<Val> some(Val value) {
+        return new MaybeSome<>(value);
     }
 
     <Result> Result dispatch(Dispatcher<Val, Result> dispatcher);
@@ -59,7 +68,7 @@ public interface Maybe<Val> {
     }
 
     static <Val> MaybeSome<Val> wrap(Val value) {
-        return new MaybeSome<>(value);
+        return Maybe.some(value);
     }
 
     default Maybe<Val> guard(Pred<Val> cond) {
@@ -110,5 +119,19 @@ public interface Maybe<Val> {
                 return doIfSome.partial(some.get());
             }
         }).run();
+    }
+
+    default Val orElse(Val defaultVal) {
+        return this.dispatch(new Dispatcher<>() {
+            @Override
+            public Val with(MaybeNone<Val> none) {
+                return defaultVal;
+            }
+
+            @Override
+            public Val with(MaybeSome<Val> some) {
+                return some.get();
+            }
+        });
     }
 }
